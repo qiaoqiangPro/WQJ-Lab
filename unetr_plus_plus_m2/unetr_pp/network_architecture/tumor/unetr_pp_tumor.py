@@ -103,22 +103,11 @@ class UNETR_PP(SegmentationNetwork):
         #     norm_name=norm_name,
         #     out_size=32*32*32,
         #     down_sample_rate=0,
-        #
+
         #     embed_dim=32,
-        #
+
         #     n_depths=0,
-        #
-        # )
-        # self.decoder2 = UnetrUpBlock1(
-        #     spatial_dims=3,
-        #     in_channels=feature_size * 2,
-        #     out_channels=feature_size,
-        #     kernel_size=3,
-        #     upsample_kernel_size=(4, 4, 4),
-        #     norm_name=norm_name,
-        #     out_size=128*128*128,
-        #     conv_decoder=True,
-        #
+
         # )
         self.decoder5 = UnetrUpBlock(
             spatial_dims=3,
@@ -128,6 +117,7 @@ class UNETR_PP(SegmentationNetwork):
             upsample_kernel_size=2,
             norm_name=norm_name,
             out_size=8 * 8 * 8,
+            skip_proj_dim=32,
         )
         self.decoder4 = UnetrUpBlock(
             spatial_dims=3,
@@ -137,6 +127,8 @@ class UNETR_PP(SegmentationNetwork):
             upsample_kernel_size=2,
             norm_name=norm_name,
             out_size=16 * 16 * 16,
+            skip_proj_dim=16,
+
         )
         self.decoder3 = UnetrUpBlock(
             spatial_dims=3,
@@ -146,8 +138,9 @@ class UNETR_PP(SegmentationNetwork):
             upsample_kernel_size=2,
             norm_name=norm_name,
             out_size=32 * 32 * 32,
+            skip_proj_dim=8,
         )
-        self.decoder2 = UnetrUpBlock(
+        self.decoder2 = UnetrUpBlock1(
             spatial_dims=3,
             in_channels=feature_size * 2,
             out_channels=feature_size,
@@ -156,6 +149,7 @@ class UNETR_PP(SegmentationNetwork):
             norm_name=norm_name,
             out_size=128 * 128 * 128,
             conv_decoder=True,
+
         )
         self.out1 = UnetOutBlock(spatial_dims=3, in_channels=feature_size, out_channels=out_channels)
         if self.do_ds:
@@ -168,9 +162,9 @@ class UNETR_PP(SegmentationNetwork):
         return x
 
     def forward(self, x_in):
-        #print("###########reached forward network")
-        #print("XIN",x_in.shape)
-        x_output, hidden_states = self.unetr_pp_encoder(x_in)   #x_out = [1,64,256] # N=4*4*4 C=256
+        # print("###########reached forward network")
+        # print("XIN",x_in.shape)
+        x_output, hidden_states = self.unetr_pp_encoder(x_in)
         convBlock = self.encoder1(x_in)
 
         # Four encoders
@@ -181,9 +175,13 @@ class UNETR_PP(SegmentationNetwork):
 
         # Four decoders
         dec4 = self.proj_feat(enc4, self.hidden_size, self.feat_size)
-        dec3 = self.decoder5(dec4, enc3)
-        dec2 = self.decoder4(dec3, enc2)
-        dec1 = self.decoder3(dec2, enc1)
+        # dec3 = self.decoder5(dec4, enc3)
+        # dec2 = self.decoder4(dec3, enc2)
+        # dec1 = self.decoder3(dec2, enc1)
+
+        dec3 = self.decoder5(dec4, enc3, x_output)  # 加入x_output来当作全局特征的引导，针对不同层的skip进行不同的维度变换
+        dec2 = self.decoder4(dec3, enc2, x_output)
+        dec1 = self.decoder3(dec2, enc1, x_output)
 
         out = self.decoder2(dec1, convBlock)
         if self.do_ds:
