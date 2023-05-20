@@ -3,10 +3,11 @@ from timm.models.layers import trunc_normal_
 from typing import Sequence, Tuple, Union
 from monai.networks.layers.utils import get_norm_layer
 from monai.utils import optional_import
-from m2.network_architecture.layers import LayerNorm
-from m2.network_architecture.transformerblock import TransformerBlock
-from m2.network_architecture.dynunet_block import get_conv_layer, UnetResBlock
-from m2.network_architecture.dynunet_block import NewEmbedding5, NewEmbedding11
+from unetr_pp.network_architecture.layers import LayerNorm
+from unetr_pp.network_architecture.tumor.transformerblock import TransformerBlock
+from unetr_pp.network_architecture.dynunet_block import get_conv_layer, UnetResBlock
+from unetr_pp.network_architecture.dynunet_block import NewEmbedding,NewEmbedding1,NewEmbedding4,SeparableConv3d
+
 
 import torch
 from timm.models.layers import to_3tuple, DropPath
